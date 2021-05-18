@@ -1,6 +1,7 @@
 import requests
 import json
 import secrets
+import datetime
 
 airtable_api_key = secrets.airtable_api_key
 base_key = secrets.base_key
@@ -34,50 +35,53 @@ def airtable_download():
     except Exception as e:
         print(e)
 
-def format_airtable_results(airtable_response):
+def format_airtable_results(records):
     # Create new dictionary containing all relevant information from Airtable
+    entry_dict = {}
 
-    for records in airtable_response['records']:
-        record_id = records['id']
-        try:
-            area = records["fields"]["Area"]
-            area = area[0]
-        except:
-            area = "Not recorded"
-        try:
-            observation_number = records["fields"]["Observation Number"]
-        except:
-            observation_number = "Not recorded"
-        try:
-            observation_type = records["fields"]["Observation Type"]
-            observation_type = observation_type[0]
-        except:
-            observation_type = "Not recorded"
-        try:
-            description = records["fields"]["Description of observation"]
-        except:
-            description = "Not recorded"
-        try:
-            created_by = records["fields"]["Created By"]
-            print(type(created_by))
-        except:
-            created_by = "Not recorded"
-        try:
-            date = records["fields"]["Created time"]
-        except:
-            date = "Note recorded"
-        try:
-            image_link = records["fields"]["Attachments"][0]["url"]
-        except:
-            image_link = "Not recorded"
-        try:
-            status = records["fields"]["Status"]
-        except:
-            status = "Open"
+    entry_dict['record_id'] = records['id']
+    try:
+        area = records["fields"]["Area"]
+        entry_dict['area'] = area[0]
+    except:
+        entry_dict['area'] = "Not recorded"
+    try:
+        entry_dict['observation_number'] = records["fields"]["Observation Number"]
+    except:
+        entry_dict['observation_number'] = "Not recorded"
+    try:
+        observation_type = records["fields"]["Observation Type"]
+        entry_dict['observation_type'] = observation_type[0]
+    except:
+        entry_dict['observation_type'] = "Not recorded"
+    try:
+        entry_dict['description'] = records["fields"]["Description of observation"]
+    except:
+        entry_dict['description'] = "Not recorded"
+    try:
+        entry_dict['created_by'] = records["fields"]["Created By"]
+    except:
+        entry_dict['created_by'] = "Not recorded"
+    try:
+        date_object = datetime.datetime.strptime(records["fields"]["Created time"], '%Y-%m-%dT%H:%M:%S.%fZ')
+        entry_dict['date'] = date_object
+    except Exception as e:
+        print(e)
+        entry_dict['date'] = "Not recorded"
+    try:
+        entry_dict['image_link'] = records["fields"]["Attachments"][0]["url"]
+    except:
+        entry_dict['image_link'] = "Not recorded"
+    try:
+        entry_dict['status'] = records["fields"]["Status"]
+    except:
+        entry_dict['status'] = "Open"
+    try:
+        entry_dict['observation_category'] = records["fields"]["Observation Category"]
+    except:
+        entry_dict['observation_category'] = "Not recorded"
 
-        # print(f'{record_id}, {area}, {observation_number}, {observation_type}, {description}, {created_by}, {date}, {status}')
-        # print(image_link)
-        return record_id, area, observation_number, observation_type, description, created_by, date, status, image_link
+    return entry_dict
 
 def export_to_excel(record):
     #download the picture from the folder and save to correct folder - rename file to the same as the observation number
@@ -97,7 +101,9 @@ if __name__ == '__main__':
     airtable_response = airtable_download()
     print(json.dumps(airtable_response, indent=4))
 
-    # returns in format - record_id, area, observation_number, observation_type, description, created_by, date, status, image_link
-    formatted_results = format_airtable_results(airtable_response)
-    for item in formatted_results:
-        print(item)
+    # Send download data format into correct sections
+    for records in airtable_response['records']:
+        formatted_results = format_airtable_results(records)
+        for item in formatted_results:
+            print(item, formatted_results[item])
+
