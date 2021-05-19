@@ -2,6 +2,7 @@ import requests
 import json
 import secrets
 import datetime
+import os
 
 airtable_api_key = secrets.airtable_api_key
 base_key = secrets.base_key
@@ -64,7 +65,7 @@ def format_airtable_results(records):
         entry_dict['created_by'] = "Not recorded"
     try:
         date_object = datetime.datetime.strptime(records["fields"]["Created time"], '%Y-%m-%dT%H:%M:%S.%fZ')
-        entry_dict['date'] = date_object
+        entry_dict['date'] = date_object.strftime("%d.%m.%Y")
     except Exception as e:
         print(e)
         entry_dict['date'] = "Not recorded"
@@ -95,6 +96,29 @@ def export_to_word(record):
 
     pass
 
+def download_picture(picture_link, observation_number):
+    try:
+        directory_name = 'Pictures'
+        try:
+            os.makedirs(directory_name)
+        except:
+            print("Directory already exists")
+
+        if os.path.isfile(f'{directory_name}/{observation_number}.jpg'):
+            print("File already exists")
+        else:
+            print("File does not exist")
+            img_data = requests.get(picture_link).content
+            try:
+                with open(f'{directory_name}/{observation_number}.jpg', 'wb') as handler:
+                    handler.write(img_data)
+            except Exception as e:
+                print(e)
+
+    except:
+        return 0
+
+
 
 if __name__ == '__main__':
     # Download information from Airtable
@@ -106,4 +130,6 @@ if __name__ == '__main__':
         formatted_results = format_airtable_results(records)
         for item in formatted_results:
             print(item, formatted_results[item])
+        print(formatted_results['image_link'])
+        image_data = download_picture(formatted_results['image_link'], formatted_results['observation_number'])
 

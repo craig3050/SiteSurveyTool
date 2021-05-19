@@ -125,3 +125,4 @@ dmypy.json
 .pyre/
 secrets.py
 Site Observation Report Template.docx
+*.jpg
