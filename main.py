@@ -3,12 +3,15 @@ import json
 import secrets
 import datetime
 import os
+from exception_decor import exception
+from exception_logger import logger
+
 
 airtable_api_key = secrets.airtable_api_key
 base_key = secrets.base_key
 table_name = secrets.table_name
 
-
+@exception(logger)
 def airtable_download():
     airtable_link = "https://api.airtable.com/v0"
     your_api_key = f"Bearer {airtable_api_key}"
@@ -36,6 +39,7 @@ def airtable_download():
     except Exception as e:
         print(e)
 
+@exception(logger)
 def format_airtable_results(records):
     # Create new dictionary containing all relevant information from Airtable
     entry_dict = {}
@@ -96,6 +100,9 @@ def export_to_word(record):
 
     pass
 
+
+
+@exception(logger)
 def download_picture(picture_link, observation_number):
     try:
         directory_name = 'Pictures'
@@ -116,7 +123,7 @@ def download_picture(picture_link, observation_number):
                 print(e)
 
     except:
-        return 0
+        pass
 
 
 
@@ -132,4 +139,3 @@ if __name__ == '__main__':
             print(item, formatted_results[item])
         print(formatted_results['image_link'])
         image_data = download_picture(formatted_results['image_link'], formatted_results['observation_number'])
-
