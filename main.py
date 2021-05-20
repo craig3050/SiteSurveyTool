@@ -5,7 +5,8 @@ import datetime
 import os
 from exception_decor import exception
 from exception_logger import logger
-
+from docx import Document
+from PIL import Image, ImageOps
 
 airtable_api_key = secrets.airtable_api_key
 base_key = secrets.base_key
@@ -85,7 +86,10 @@ def format_airtable_results(records):
         entry_dict['observation_category'] = records["fields"]["Observation Category"]
     except:
         entry_dict['observation_category'] = "Not recorded"
-
+    try:
+        entry_dict['location'] = records["fields"]["Location"]
+    except:
+        entry_dict['location'] = "Not recorded"
     return entry_dict
 
 def export_to_excel(record):
@@ -94,18 +98,47 @@ def export_to_excel(record):
     pass
 
 
-def export_to_word(record):
-    #download picture, insert into correct part of word document
-    #see python-docx module - appears to cover everything needed
+def export_to_word(formatted_results, image_link):
+    if os.path.isfile(f'SiteReport.docx'):
+        print("File already exists")
+        doc = Document("SiteReport.docx")
+    else:
+        doc = Document("Template.docx")
 
-    pass
-
-
+    #print(doc.tables)
+    # print("Retrieved value: " + doc.tables[0].cell(0, 0).text)
+    # print("Retrieved value: " + doc.tables[1].cell(0, 0).text)
+    # print("Retrieved value: " + doc.tables[2].cell(0, 0).text)
+    # for item in formatted_results:
+    #     print(item, formatted_results[item])
+    row_count = len(doc.tables[2].rows)
+    # print(f'Row Count: {row_count}')
+    text_for_table = f"""
+Area: {str(formatted_results['area'])}
+Location: {str(formatted_results['location'])}
+Observation Type: {str(formatted_results['observation_type'])}
+Observation Category: {str(formatted_results['observation_category'])}
+Description:\n {str(formatted_results['description'])}
+                     """
+    doc.tables[2].cell(row_count-1, 0).text = str(formatted_results['observation_number'])
+    doc.tables[2].cell(row_count-1, 1).text = str(text_for_table)
+    paragraph = doc.tables[2].cell(row_count-1, 2).paragraphs[0]
+    #paragraph.text = image_link
+    # print(image_link)
+    try:
+        #paragraph.add_picture(image_link, width=530)
+        run = paragraph.add_run()
+        run.add_picture(image_link, width = 3000000)
+    except Exception as e:
+        print(e)
+    #doc.tables[2].cell(row_count-1, 2).add_picture(image_data, width=Cm(10))
+    doc.tables[2].add_row() #ADD ROW HERE
+    doc.save("SiteReport.docx")
 
 @exception(logger)
 def download_picture(picture_link, observation_number):
+    directory_name = 'Pictures'
     try:
-        directory_name = 'Pictures'
         try:
             os.makedirs(directory_name)
         except:
@@ -121,10 +154,17 @@ def download_picture(picture_link, observation_number):
                     handler.write(img_data)
             except Exception as e:
                 print(e)
-
+            try:
+                image_pil = Image.open(f'{directory_name}/{observation_number}.jpg').convert('RGB')
+                image_pil = ImageOps.exif_transpose(image_pil)
+                print(type(image_pil))
+                image_pil.save(f'{directory_name}/{observation_number}.jpg')
+            except:
+                "Cannot transpose image"
     except:
-        pass
+        print('No image to download')
 
+    return f'{directory_name}/{observation_number}.jpg'
 
 
 if __name__ == '__main__':
@@ -135,7 +175,6 @@ if __name__ == '__main__':
     # Send download data format into correct sections
     for records in airtable_response['records']:
         formatted_results = format_airtable_results(records)
-        for item in formatted_results:
-            print(item, formatted_results[item])
-        print(formatted_results['image_link'])
-        image_data = download_picture(formatted_results['image_link'], formatted_results['observation_number'])
+        image_link = download_picture(formatted_results['image_link'], formatted_results['observation_number'])
+        export_to_word(formatted_results, image_link)
+
