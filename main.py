@@ -30,8 +30,8 @@ def airtable_download():
             response = requests.get(f'{airtable_link}/{base_key}/{table_name}',
                                     headers=headers, params=params)
 
-            print(str(response))
-            print(str(response.content))
+            #print(str(response))
+            #print(str(response.content))
             json_to_print = json.loads(response.content)
             # print(json.dumps(json_to_print, indent=4))
 
@@ -100,7 +100,7 @@ def export_to_excel(record):
 
 def export_to_word(formatted_results, image_link):
     if os.path.isfile(f'SiteReport.docx'):
-        print("File already exists")
+        #print("File already exists")
         doc = Document("SiteReport.docx")
     else:
         doc = Document("Template.docx")
@@ -108,7 +108,6 @@ def export_to_word(formatted_results, image_link):
     # Add today's date to the table
     today = datetime.date.today()
     today = today.strftime("%d/%m/%Y")
-    print("Today's date:", today)
     doc.tables[0].cell(2, 1).text = str(today)
 
     # Add information from survey into the table
@@ -158,7 +157,6 @@ def download_picture(picture_link, observation_number):
             try:
                 image_pil = Image.open(f'{directory_name}/{observation_number}.jpg').convert('RGB')
                 image_pil = ImageOps.exif_transpose(image_pil)
-                print(type(image_pil))
                 image_pil.save(f'{directory_name}/{observation_number}.jpg')
             except:
                 "Cannot transpose image"
@@ -171,7 +169,7 @@ def download_picture(picture_link, observation_number):
 if __name__ == '__main__':
     # Download information from Airtable
     airtable_response = airtable_download()
-    print(json.dumps(airtable_response, indent=4))
+    #print(json.dumps(airtable_response, indent=4))
 
     # Send download data format into correct sections
     for records in airtable_response['records']:
