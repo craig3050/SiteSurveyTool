@@ -105,33 +105,34 @@ def export_to_word(formatted_results, image_link):
     else:
         doc = Document("Template.docx")
 
-    #print(doc.tables)
-    # print("Retrieved value: " + doc.tables[0].cell(0, 0).text)
-    # print("Retrieved value: " + doc.tables[1].cell(0, 0).text)
-    # print("Retrieved value: " + doc.tables[2].cell(0, 0).text)
-    # for item in formatted_results:
-    #     print(item, formatted_results[item])
+    # Add today's date to the table
+    today = datetime.date.today()
+    today = today.strftime("%d/%m/%Y")
+    print("Today's date:", today)
+    doc.tables[0].cell(2, 1).text = str(today)
+
+    # Add information from survey into the table
     row_count = len(doc.tables[2].rows)
-    # print(f'Row Count: {row_count}')
-    text_for_table = f"""
-Area: {str(formatted_results['area'])}
-Location: {str(formatted_results['location'])}
-Observation Type: {str(formatted_results['observation_type'])}
-Observation Category: {str(formatted_results['observation_category'])}
-Description:\n {str(formatted_results['description'])}
-                     """
-    doc.tables[2].cell(row_count-1, 0).text = str(formatted_results['observation_number'])
-    doc.tables[2].cell(row_count-1, 1).text = str(text_for_table)
+    doc.tables[2].cell(row_count - 1, 0).text = str(formatted_results['observation_number'])
+    doc.tables[2].cell(row_count - 1, 1).paragraphs[0].add_run("Area:\n").bold=True
+    doc.tables[2].cell(row_count - 1, 1).paragraphs[0].add_run(str(formatted_results['area']))
+    doc.tables[2].cell(row_count - 1, 1).paragraphs[0].add_run("\nLocation:\n").bold=True
+    doc.tables[2].cell(row_count - 1, 1).paragraphs[0].add_run(str(formatted_results['location']))
+    doc.tables[2].cell(row_count - 1, 1).paragraphs[0].add_run("\nObservation Type:\n").bold=True
+    doc.tables[2].cell(row_count - 1, 1).paragraphs[0].add_run(str(formatted_results['observation_type']))
+    doc.tables[2].cell(row_count - 1, 1).paragraphs[0].add_run("\nObservation Category:\n").bold=True
+    doc.tables[2].cell(row_count - 1, 1).paragraphs[0].add_run(str(formatted_results['observation_category']))
+    doc.tables[2].cell(row_count - 1, 1).paragraphs[0].add_run("\nDescription:\n").bold=True
+    doc.tables[2].cell(row_count - 1, 1).paragraphs[0].add_run(str(formatted_results['description']))
+
+    # Add empty paragraph in the photos column so the photo can be added
     paragraph = doc.tables[2].cell(row_count-1, 2).paragraphs[0]
-    #paragraph.text = image_link
-    # print(image_link)
+
     try:
-        #paragraph.add_picture(image_link, width=530)
         run = paragraph.add_run()
         run.add_picture(image_link, width = 3000000)
     except Exception as e:
         print(e)
-    #doc.tables[2].cell(row_count-1, 2).add_picture(image_data, width=Cm(10))
     doc.tables[2].add_row() #ADD ROW HERE
     doc.save("SiteReport.docx")
 
