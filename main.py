@@ -123,13 +123,17 @@ def export_to_word(formatted_results, image_link):
     date_of_survey = "<<date from input>>"
     chaperone = "<<Person who walked us round>>"
     progress_from_site = "Nothing so far..."
-    print(f"""{surveyor_names} (BDP) attended site {date_of_survey} for a design team meeting and general site walkover with the construction team.
+    placeholder1 = f"""{surveyor_names} (BDP) attended site {date_of_survey} for a design team meeting and general site walkover with the construction team.
 
 {chaperone} from the Contractor team was in attendance.
 
 Progress on site includes:
 {progress_from_site}
-""")
+"""
+    for text_to_replace in doc.paragraphs:
+        if "<<Placeholder1>>" in text_to_replace.text:
+            print(text_to_replace.text)
+            text_to_replace.text = placeholder1
 
     # Add information from survey into the table
     row_count = len(doc.tables[2].rows)
@@ -194,6 +198,10 @@ if __name__ == '__main__':
 
     # Send download data format into correct sections
     for records in airtable_response['records']:
+        # Look through the returned results and only incorporate in date range
+        #######
+        #######
+        
         formatted_results = format_airtable_results(records)
         image_link = download_picture(formatted_results['image_link'], formatted_results['observation_number'])
         export_to_word(formatted_results, image_link)
