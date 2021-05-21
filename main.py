@@ -7,6 +7,7 @@ from exception_decor import exception
 from exception_logger import logger
 from docx import Document
 from PIL import Image, ImageOps
+from openpyxl import load_workbook
 
 airtable_api_key = secrets.airtable_api_key
 base_key = secrets.base_key
@@ -92,13 +93,54 @@ def format_airtable_results(records):
         entry_dict['location'] = "Not recorded"
     return entry_dict
 
-def export_to_excel(record):
-    #download the picture from the folder and save to correct folder - rename file to the same as the observation number
-    #create new row, add the correct details, link to the picture in the folder / reference it
-    pass
 
+def export_to_excel(formatted_results, image_link, svr_no):
+    #if workbook is available
+    #open workbook
+    #else
+    #create new workbook from template
+    if os.path.isfile('The Factory - Site Observation Reports Summary.xlsx'):
+        #print("File already exists")
+        wb = load_workbook("The Factory - Site Observation Reports Summary.xlsx")
+    else:
+        wb = load_workbook("Summary Template.xlsx")
 
-def export_to_word(formatted_results, image_link):
+    ws = wb['Sheet1']
+
+    #check if entry is in current column - exit if true
+    for cell in ws['A']:
+        if cell == str(formatted_results['record_id']):
+            print('Record already present')
+            return 0
+
+    today = datetime.date.today()
+    today = today.strftime("%d/%m/%Y")
+    ws.cell(column=2, row=4, value=str(today))
+
+    #if entry is not in column
+    new_row_location = ws.max_row + 1
+    # write to the cell you want, specifying row and column, and value
+    ws.cell(column=1, row=new_row_location, value=str(formatted_results['record_id']))
+    ws.cell(column=2, row=new_row_location, value=str(formatted_results['observation_number']))
+    ws.cell(column=3, row=new_row_location, value=str(svr_no))
+    ws.cell(column=5, row=new_row_location, value=str(formatted_results['date']))
+    ws.cell(column=6, row=new_row_location, value=str(formatted_results['area']))
+    ws.cell(column=7, row=new_row_location, value=str(formatted_results['location']))
+    ws.cell(column=8, row=new_row_location, value=str(formatted_results['description']))
+    ws.cell(column=9, row=new_row_location, value=str(formatted_results['status']))
+    ws.cell(column=10, row=new_row_location, value=str(formatted_results['observation_type']))
+    ws.cell(column=11, row=new_row_location, value=str(formatted_results['observation_category']))
+    hyperlink_location = f'=HYPERLINK(O{new_row_location})'
+    ws.cell(column=12, row=new_row_location, value=hyperlink_location)
+    ws.cell(column=14, row=new_row_location, value='=LEFT(CELL("filename", A1), FIND("[",CELL("filename",A1))-1)')
+    ws.cell(column=15, row=new_row_location, value=str(image_link))
+
+    # Save the sheet and close
+    wb.save(filename='The Factory - Site Observation Reports Summary.xlsx')
+    wb.close()
+
+@exception(logger)
+def export_to_word(formatted_results, image_link, svr_no):
     if os.path.isfile(f'SiteReport.docx'):
         #print("File already exists")
         doc = Document("SiteReport.docx")
@@ -106,7 +148,6 @@ def export_to_word(formatted_results, image_link):
         doc = Document("Template.docx")
 
     # Add site report number (take number from input)
-    svr_no = "001"
     doc.tables[0].cell(0, 1).text = svr_no
 
     # Add today's date to the table
@@ -132,7 +173,6 @@ Progress on site includes:
 """
     for text_to_replace in doc.paragraphs:
         if "<<Placeholder1>>" in text_to_replace.text:
-            print(text_to_replace.text)
             text_to_replace.text = placeholder1
 
     # Add information from survey into the table
@@ -191,26 +231,34 @@ def download_picture(picture_link, observation_number):
     return f'{directory_name}/{observation_number}.jpg'
 
 
+
 if __name__ == '__main__':
+    svr_no = "001"
+
     # Download information from Airtable
     airtable_response = airtable_download()
     #print(json.dumps(airtable_response, indent=4))
 
     # Send download data format into correct sections
     for records in airtable_response['records']:
+        # Download all the items from Airtable
         formatted_results = format_airtable_results(records)
+
         # Download all the new images - this will skip existing images
         image_link = download_picture(formatted_results['image_link'], formatted_results['observation_number'])
 
+        # Add the items to a Word report
         # Look through the returned results and only incorporate in date range
         date1 = "20/01/2021" #change to input
         date2 = "21/05/2021" #change to input
         date1 = datetime.datetime.strptime(date1, "%d/%m/%Y")
         date2 = datetime.datetime.strptime(date2, "%d/%m/%Y")
         survey_date = datetime.datetime.strptime(formatted_results['date'], "%d.%m.%Y")
-
+        # Check if survey was between the two dates specified
         if date1 <= survey_date <= date2:
-            export_to_word(formatted_results, image_link)
-        #######
+            export_to_word(formatted_results, image_link, svr_no)
+
+        # Add the items to a master Excel document
+        export_to_excel(formatted_results, image_link, svr_no)
 
 
