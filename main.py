@@ -105,10 +105,31 @@ def export_to_word(formatted_results, image_link):
     else:
         doc = Document("Template.docx")
 
+    # Add site report number (take number from input)
+    svr_no = "001"
+    doc.tables[0].cell(0, 1).text = svr_no
+
     # Add today's date to the table
     today = datetime.date.today()
     today = today.strftime("%d/%m/%Y")
     doc.tables[0].cell(2, 1).text = str(today)
+
+    # Add name to 'issued by' field (take from input)
+    issued_by = "Craig Cuninghame"
+    doc.tables[1].cell(1, 1).text = issued_by
+
+    # Replace placeholder text with the relevant info (take from input)
+    surveyor_names = "Craig Cuninghame & Gary Fairclough"
+    date_of_survey = "<<date from input>>"
+    chaperone = "<<Person who walked us round>>"
+    progress_from_site = "Nothing so far..."
+    print(f"""{surveyor_names} (BDP) attended site {date_of_survey} for a design team meeting and general site walkover with the construction team.
+
+{chaperone} from the Contractor team was in attendance.
+
+Progress on site includes:
+{progress_from_site}
+""")
 
     # Add information from survey into the table
     row_count = len(doc.tables[2].rows)
