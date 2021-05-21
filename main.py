@@ -198,11 +198,19 @@ if __name__ == '__main__':
 
     # Send download data format into correct sections
     for records in airtable_response['records']:
-        # Look through the returned results and only incorporate in date range
-        #######
-        #######
-        
         formatted_results = format_airtable_results(records)
+        # Download all the new images - this will skip existing images
         image_link = download_picture(formatted_results['image_link'], formatted_results['observation_number'])
-        export_to_word(formatted_results, image_link)
+
+        # Look through the returned results and only incorporate in date range
+        date1 = "20/01/2021" #change to input
+        date2 = "21/05/2021" #change to input
+        date1 = datetime.datetime.strptime(date1, "%d/%m/%Y")
+        date2 = datetime.datetime.strptime(date2, "%d/%m/%Y")
+        survey_date = datetime.datetime.strptime(formatted_results['date'], "%d.%m.%Y")
+
+        if date1 <= survey_date <= date2:
+            export_to_word(formatted_results, image_link)
+        #######
+
 
