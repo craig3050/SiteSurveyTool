@@ -253,6 +253,7 @@ if __name__ == '__main__':
         date2 = "21/05/2021" #change to input
         date1 = datetime.datetime.strptime(date1, "%d/%m/%Y")
         date2 = datetime.datetime.strptime(date2, "%d/%m/%Y")
+
         survey_date = datetime.datetime.strptime(formatted_results['date'], "%d.%m.%Y")
         # Check if survey was between the two dates specified
         if date1 <= survey_date <= date2:
