@@ -183,32 +183,37 @@ class MainWindow:
         ws = wb['Sheet1']
 
         # check if entry is in current column - exit if true
+        temp_list = []
         for cell in ws['A']:
-            if cell == str(formatted_results['record_id']):
-                print('Record already present')
-                return 0
+            temp_list.append(cell.value)
+        print(temp_list)
 
-        today = datetime.date.today()
-        today = today.strftime("%d/%m/%Y")
-        ws.cell(column=2, row=4, value=str(today))
+        if str(formatted_results['record_id']) not in temp_list:
+            print('Excel Sheet - Record not present')
+            today = datetime.date.today()
+            today = today.strftime("%d/%m/%Y")
+            ws.cell(column=2, row=4, value=str(today))
 
-        # if entry is not in column
-        new_row_location = ws.max_row + 1
-        # write to the cell you want, specifying row and column, and value
-        ws.cell(column=1, row=new_row_location, value=str(formatted_results['record_id']))
-        ws.cell(column=2, row=new_row_location, value=str(formatted_results['observation_number']))
-        ws.cell(column=3, row=new_row_location, value=str(svr_no))
-        ws.cell(column=5, row=new_row_location, value=str(formatted_results['date']))
-        ws.cell(column=6, row=new_row_location, value=str(formatted_results['area']))
-        ws.cell(column=7, row=new_row_location, value=str(formatted_results['location']))
-        ws.cell(column=8, row=new_row_location, value=str(formatted_results['description']))
-        ws.cell(column=9, row=new_row_location, value=str(formatted_results['status']))
-        ws.cell(column=10, row=new_row_location, value=str(formatted_results['observation_type']))
-        ws.cell(column=11, row=new_row_location, value=str(formatted_results['observation_category']))
-        hyperlink_location = f'=HYPERLINK(O{new_row_location})'
-        ws.cell(column=12, row=new_row_location, value=hyperlink_location)
-        ws.cell(column=14, row=new_row_location, value='=LEFT(CELL("filename", A1), FIND("[",CELL("filename",A1))-1)')
-        ws.cell(column=15, row=new_row_location, value=str(image_link))
+            # if entry is not in column
+            new_row_location = ws.max_row + 1
+            # write to the cell you want, specifying row and column, and value
+            ws.cell(column=1, row=new_row_location, value=str(formatted_results['record_id']))
+            ws.cell(column=2, row=new_row_location, value=str(formatted_results['observation_number']))
+            ws.cell(column=3, row=new_row_location, value=str(svr_no))
+            ws.cell(column=5, row=new_row_location, value=str(formatted_results['date']))
+            ws.cell(column=6, row=new_row_location, value=str(formatted_results['area']))
+            ws.cell(column=7, row=new_row_location, value=str(formatted_results['location']))
+            ws.cell(column=8, row=new_row_location, value=str(formatted_results['description']))
+            ws.cell(column=9, row=new_row_location, value=str(formatted_results['status']))
+            ws.cell(column=10, row=new_row_location, value=str(formatted_results['observation_type']))
+            ws.cell(column=11, row=new_row_location, value=str(formatted_results['observation_category']))
+            hyperlink_location = f'=HYPERLINK(O{new_row_location})'
+            ws.cell(column=12, row=new_row_location, value=hyperlink_location)
+            ws.cell(column=14, row=new_row_location, value='=LEFT(CELL("filename", A1), FIND("[",CELL("filename",A1))-1)')
+            ws.cell(column=15, row=new_row_location, value=str(image_link))
+        else:
+            print('Excel Sheet - Record already present')
+
 
         # Save the sheet and close
         wb.save(filename='The Factory - Site Observation Reports Summary.xlsx')
@@ -245,7 +250,7 @@ class MainWindow:
 
 Progress on site includes:
 {progress_from_site}
-    """
+"""
         for text_to_replace in doc.paragraphs:
             if "<<Placeholder1>>" in text_to_replace.text:
                 text_to_replace.text = placeholder1
