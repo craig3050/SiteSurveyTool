@@ -28,6 +28,7 @@ from exception_logger import logger
 airtable_api_key = secrets.airtable_api_key
 base_key = secrets.base_key
 table_name = secrets.table_name
+from pyairtable import Api, Base, Table
 
 from MainUI import Ui_MainWindow
 
@@ -41,7 +42,7 @@ else:
     application_path = os.path.dirname(os.path.abspath(__file__))
 
 
-@exception(logger)
+
 class MainWindow:
     def __init__(self):
         self.main_win = QMainWindow()
@@ -62,29 +63,42 @@ class MainWindow:
         QtCore.QCoreApplication.processEvents()
         airtable_link = "https://api.airtable.com/v0"
         your_api_key = f"Bearer {airtable_api_key}"
-
+        offset = '0'
         try:
             with requests.session() as response:
                 headers = {
                     'Authorization': your_api_key,
                 }
 
-                params = (
-                    ('maxRecords', '1000'),
-                    ('view', 'Grid view'),
-                )
-                response = requests.get(f'{airtable_link}/{base_key}/{table_name}',
-                                        headers=headers, params=params)
+                params = {
+                    'view':'Grid view',
+                    'offset':offset}
 
-                # print(str(response))
-                # print(str(response.content))
-                json_to_print = json.loads(response.content)
-                # print(json.dumps(json_to_print, indent=4))
+                record_list = []
+                run = True
+                while run is True:
+                    response = requests.get(f'{airtable_link}/{base_key}/{table_name}',
+                                            headers=headers, params=params)
+                    # print(str(response))
+                    response = json.loads(response.content)
+                    # print(str(response))
+                    for item in response['records']:
+                        record_list.append(json.dumps(item))
+                    if 'offset' in response:
+                        offset = str(response['offset'])
+                        params = (('offset', offset),)
+                    else:
+                        run = False
+                    print(offset)
 
-                return json_to_print
+                with open('json_output3.json', 'w') as f:
+                    f.write(str(record_list))
+
+                return record_list
 
         except Exception as e:
             print(e)
+
 
     def format_airtable_results(self, records):
         QtCore.QCoreApplication.processEvents()
@@ -168,6 +182,7 @@ class MainWindow:
             print('No image to download')
 
         return f'{directory_name}/{observation_number}.jpg'
+
 
     def export_to_excel(self, formatted_results, image_link, svr_no):
         # if workbook is available
@@ -281,8 +296,6 @@ Progress on site includes:
         doc.save("SiteReport.docx")
 
 
-
-
     def generate_reports(self):
         svr_no = self.ui.lineEdit_svr_no.text()
         site_visit_date = self.ui.lineEdit_site_visit_date.text()
@@ -331,10 +344,13 @@ Progress on site includes:
         try:
             self.ui.listWidget_outputWindow.clear()
             # Send download data format into correct sections
-            for records in airtable_response['records']:
-
+            # for records in airtable_response['records']:
+            for records in airtable_response:
                 QtCore.QCoreApplication.processEvents()
-
+                print(records)
+                records = json.loads(records)
+                for item in records:
+                    print(item)
                 # Download all the items from Airtable
                 formatted_results = self.format_airtable_results(records)
 
